@@ -1,0 +1,70 @@
+name: PHP Lint & Security Check
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  php-lint:
+    name: PHP Syntax Check
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        php-version: ['7.4', '8.0', '8.1', '8.2', '8.3']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: openssl, json, mbstring
+          coverage: none
+      
+      - name: Check PHP syntax
+        run: |
+          find . -name "*.php" -not -path "./vendor/*" | xargs -n 1 php -l
+      
+      - name: PHP CodeSniffer (WordPress Standards)
+        if: matrix.php-version == '8.1'
+        run: |
+          composer global config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          composer global require --no-interaction squizlabs/php_codesniffer wp-coding-standards/wpcs dealerdirect/phpcodesniffer-composer-installer
+          ~/.composer/vendor/bin/phpcs --standard=WordPress-Extra --extensions=php --ignore=vendor --report=summary . || true
+
+  security-check:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: openssl, json, mbstring
+      
+      - name: Check for security issues
+        run: |
+          # Check for potentially dangerous functions
+          echo "Checking for dangerous PHP functions..."
+          if grep -rn "eval\s*(" --include="*.php" .; then
+            echo "::warning::Found eval() usage"
+          fi
+          if grep -rn "exec\s*(" --include="*.php" .; then
+            echo "::warning::Found exec() usage"
+          fi
+          if grep -rn "shell_exec\s*(" --include="*.php" .; then
+            echo "::warning::Found shell_exec() usage"
+          fi
+          if grep -rn "system\s*(" --include="*.php" .; then
+            echo "::warning::Found system() usage"
+          fi
+          echo "Security check completed"

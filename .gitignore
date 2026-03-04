@@ -1,0 +1,32 @@
+# IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# WordPress
+wp-config.php
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/cache/
+
+# Logs
+*.log
+debug.log
+
+# Dependencies (if any)
+node_modules/
+vendor/
+
+# Build artifacts
+*.zip
+dist/
+
+# Local development
+.env
+.env.local
